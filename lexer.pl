@@ -1,11 +1,26 @@
 reserved(Word) :-
-	member(Word, [and,begin,case,def,default,do,end,else,if,not,or,switch,while,var]).
+	member(Word, [and,begin,case,continue,def,default,do,end,elif,else,if,not,or,pass,switch,while,var]).
+
+id_initial_char(Char) :-
+	atom_codes(C, [Char]),
+	(C = '_' ; unicode_property(C, category('L'))).
+
+id_char(Char) :-
+	atom_codes(C, [Char]),
+	(C = '_' ; unicode_property(C, category('L')) ; unicode_property(C, category('N'))).
+
+delim_char(Delim) :-
+	member(Delim, ` \t\r\n!%^&*-+=|<>/~()[]{}:;,\\`).
 
 % base case: end of input
 lex([], []).
-% standalone single-char punctuation symbols
+% space - just skip over, don't create token
+lex([Space|String], Tokens) :-
+	[Space] = ` `,
+	lex(String, Tokens).
+% standalone single-char punctuation symbols and whitespace
 lex([Punct|String], [Symbol|Tokens]) :-
-	member(Punct, `~()[]{}:;,\\`),
+	member(Punct, `~()[]{}:;,\\\t\r\n`),
 	atom_string(Symbol, [Punct]),
 	lex(String, Tokens).
 % op-equals (+=, -=, >=, ==, !=, etc)
@@ -36,10 +51,24 @@ lex([Quote|Input], [char(Char)|Tokens]) :-
 	literal_char(Input, Char, RemainingInput),
 	lex(RemainingInput, Tokens).
 % identifiers and keywords
-lex([Char|Input], [Word|Tokens]) :-
+lex([Char|Input], [Tok|Tokens]) :-
 	id_initial_char(Char),
-	lex_word([Char|Input], Word, RemainingInput),
+	lex_word([Char|Input], WordCodes, RemainingInput),
+	atom_codes(Word, WordCodes),
+	(reserved(Word)
+		-> Tok = Word
+		;  Tok = id(Word)),
 	lex(RemainingInput, Tokens).
+
+% base case: end of input
+lex_word([], [], []).
+% base case: end of word
+lex_word([Delim|Input], [], [Delim|Input]) :-
+	delim_char(Delim).
+% word char
+lex_word([Char|Input], [Char|Word], RemainingInput) :-
+	id_char(Char),
+	lex_word(Input, Word, RemainingInput).
 
 % base case: end quote
 literal_string([Quote|Input], [], Input) :-
@@ -78,12 +107,27 @@ escape_code([X,D1,D2|String], CharValue, String) :-
 literal_number([O,X|Input], int(Value), RemainingInput) :-
 	[O,X] = `0x`,
 	literal_hex(Input, 0, Value, RemainingInput).
+% decimal integer literals
+/*literal_number(Input, int(Value), [Char|RemainingInput]) :-
+	literal_int(Input, Value, [Char|RemainingInput]),
+	\+ member(Char, `.efL`).
+% decimal float literals
+literal_number(Input, float(Value), RemainingInput) :-
+	literal_int(Input, PrePt, [Pt|MidInput]),
+	[Pt] = `.`,
+	literal_int(MidInput, PostPt, RemainingInput),
+	Value is [PrePt,PostPt]. %TODO: fix
+% scientific float literals
+% TODO
+*/
 
+% base case: end of input
+literal_hex([], Value, Value, []).
 % base case: end of literal
 literal_hex([Delim|Input], Value, Value, [Delim|Input]) :-
-	member(Delim, ` \t\r\n!%^&*-+=|<>/~()[]{}:;,\\`).
+	delim_char(Delim).
 literal_hex([Digit|Input], Prev, Value, RemainingInput) :-
 	nth0(N, `0123456789abcdefABCDEF`, Digit),
 	nth0(N, [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,10,11,12,13,14,15], V),
 	Cur is Prev * 16 + V,
-	literal_hex(Input, Value, RemainingInput).
+	literal_hex(Input, Cur, Value, RemainingInput).
