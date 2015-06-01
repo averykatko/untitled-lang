@@ -1,5 +1,5 @@
 reserved(Word) :-
-	member(Word, [and,begin,case,continue,def,default,do,end,elif,else,if,not,or,pass,switch,while,var]).
+	member(Word, [and,begin,case,continue,cycle,def,default,do,end,exit,elif,else,false,if,in,not,of,or,pass,switch,true,type,while,var]).
 
 id_initial_char(Char) :-
 	atom_codes(C, [Char]),
@@ -107,19 +107,7 @@ escape_code([X,D1,D2|String], CharValue, String) :-
 literal_number([O,X|Input], int(Value), RemainingInput) :-
 	[O,X] = `0x`,
 	literal_hex(Input, 0, Value, RemainingInput).
-% decimal integer literals
-/*literal_number(Input, int(Value), [Char|RemainingInput]) :-
-	literal_int(Input, Value, [Char|RemainingInput]),
-	\+ member(Char, `.efL`).
-% decimal float literals
-literal_number(Input, float(Value), RemainingInput) :-
-	literal_int(Input, PrePt, [Pt|MidInput]),
-	[Pt] = `.`,
-	literal_int(MidInput, PostPt, RemainingInput),
-	Value is [PrePt,PostPt]. %TODO: fix
-% scientific float literals
-% TODO
-*/
+% TODO: decimal int literals, float literals, scientific float literals, type suffixes?
 
 % base case: end of input
 literal_hex([], Value, Value, []).
