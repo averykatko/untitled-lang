@@ -1,5 +1,5 @@
 reserved(Word) :-
-	member(Word, [and,begin,case,continue,cycle,def,default,do,end,exit,elif,else,false,if,in,not,of,or,pass,switch,true,type,while,var]).
+	member(Word, [and,begin,case,continue,cycle,def,defn,default,do,end,exit,elif,else,false,fn,if,in,not,of,or,pass,switch,true,type,while,var]).
 
 id_initial_char(Char) :-
 	atom_codes(C, [Char]),
