@@ -38,9 +38,9 @@ declaration --> [def, id(Name), '='], expression(Type).
 declaration --> [var, id(Name), '='], expression(Type).
 declaration --> [var, id(Name), ':'], type_expression(Type).
 
-assignment --> l_value(Type), ['='], expression(Type).
+assignment(Type) --> l_value(Type), ['='], expression(Type).
 
-l_value(Type) --> id(Name).
+l_value(Type) --> [id(Name)].
 
 type_expression(Type) --> [Type], {member(Type, [bool, int, float, string])}.
 
@@ -48,3 +48,8 @@ expression(Type) --> l_value(Type) ; assignment(Type) ; function_call(Type).
 expression(bool) --> [true] ; [false].
 expression(int) --> int(_Val).
 expression(float) --> float(_Val).
+
+function_call(Type) --> expression(ftype(ArgTypes,Type)), ['('], argument_list(ArgTypes), [')'].
+argument_list([]) --> [].
+argument_list([ArgType]) --> expression(ArgType).
+argument_list([ArgType|ArgTypes]) --> expression(ArgType), [','], argument_list(ArgTypes).
